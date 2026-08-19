@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B-Bot 系統監測與 Log 控制台</title>
+    <title>B-Bot 系統監控與 Log 控制台</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -32,7 +32,6 @@
         }
     </script>
     <style>
-        /* 自訂極簡滾動條 */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -57,7 +56,7 @@
         }
     </style>
 
-    <!-- 初始化主題設定 (避免亮暗色切換閃爍) -->
+    <!-- 初始化主題設定 -->
     <script>
         if (localStorage.getItem('bbot_theme') === 'light') {
             document.documentElement.classList.remove('dark');
@@ -97,12 +96,27 @@
         </div>
     </div>
 
-    <!-- 頂部導航欄 (極簡風) -->
+    <!-- 頂部導航欄 -->
     <header class="bg-white/90 dark:bg-darkBg/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800/80 px-6 py-4 sticky top-0 z-30 transition-colors duration-200">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 dark:bg-white inline-block"></span>
-                <h1 class="text-base font-semibold tracking-wider text-zinc-900 dark:text-white uppercase">B-Bot 系統監控</h1>
+            <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 dark:bg-white inline-block"></span>
+                    <h1 class="text-base font-semibold tracking-wider text-zinc-900 dark:text-white uppercase">B-Bot 系統監控</h1>
+                </div>
+                
+                <!-- 頁面切換導航標籤 -->
+                <nav class="hidden md:flex items-center space-x-1 bg-zinc-100 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 p-1 rounded-lg">
+                    <button id="nav-tab-dashboard" onclick="switchMainTab('dashboard')" class="px-3 py-1 text-xs font-mono font-medium rounded-md transition bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs cursor-pointer flex items-center space-x-1.5">
+                        <i class="fa-solid fa-chart-line text-indigo-500"></i>
+                        <span>控制台與 Log</span>
+                    </button>
+                    <button id="nav-tab-chat" onclick="switchMainTab('chat')" class="px-3 py-1 text-xs font-mono font-medium rounded-md transition text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer flex items-center space-x-1.5">
+                        <i class="fa-solid fa-comments text-emerald-500"></i>
+                        <span>交辦聊天室</span>
+                        <span id="chat-badge-count" class="hidden w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </button>
+                </nav>
             </div>
             
             <div class="flex items-center space-x-3">
@@ -138,155 +152,188 @@
                 </button>
             </div>
         </div>
+        <!-- 行動裝置導航切換列 -->
+        <div class="flex md:hidden items-center justify-center space-x-2 mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800/80">
+            <button onclick="switchMainTab('dashboard')" id="m-tab-dash" class="flex-1 py-1.5 px-3 text-xs font-mono font-medium rounded bg-zinc-900 text-white dark:bg-zinc-200 dark:text-zinc-900 text-center transition">
+                <i class="fa-solid fa-chart-line mr-1"></i>控制台與 Log
+            </button>
+            <button onclick="switchMainTab('chat')" id="m-tab-chat" class="flex-1 py-1.5 px-3 text-xs font-mono font-medium rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 text-center transition">
+                <i class="fa-solid fa-comments mr-1"></i>交辦聊天室
+            </button>
+        </div>
     </header>
 
     <!-- 主內容區域 -->
     <main id="main-content" class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6 hidden">
 
-        <!-- 機器人線上狀態卡片 (極簡單線條設計) -->
-        <div class="w-full">
-            <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg p-6 flex flex-col justify-between shadow-xs dark:shadow-none transition-colors duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-[11px] font-mono uppercase tracking-widest text-zinc-500 mb-1.5">系統運作狀態</p>
+        <!-- ==================== 控制台分頁 (Dashboard View) ==================== -->
+        <div id="view-dashboard" class="space-y-6">
+            <!-- 機器人線上狀態卡片 -->
+            <div class="w-full">
+                <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg p-6 flex flex-col justify-between shadow-xs dark:shadow-none transition-colors duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-mono uppercase tracking-widest text-zinc-500 mb-1.5">系統運作狀態</p>
+                            <div class="flex items-center space-x-3">
+                                <div id="status-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-zinc-400 dark:bg-zinc-600"></div>
+                                <h2 id="status-text" class="text-xl font-medium tracking-tight text-zinc-800 dark:text-zinc-200">讀取中...</h2>
+                            </div>
+                        </div>
                         <div class="flex items-center space-x-3">
-                            <div id="status-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-zinc-400 dark:bg-zinc-600"></div>
-                            <h2 id="status-text" class="text-xl font-medium tracking-tight text-zinc-800 dark:text-zinc-200">讀取中...</h2>
+                            <div class="text-right border-r border-zinc-200 dark:border-zinc-800 pr-3 mr-1 hidden sm:block">
+                                <span class="text-[10px] font-mono uppercase text-zinc-400 block">總 Log 筆數</span>
+                                <span id="stat-total-logs-top" class="text-lg font-mono font-semibold text-zinc-800 dark:text-zinc-200">0</span>
+                            </div>
+                            <span id="status-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-medium tracking-wider bg-zinc-100 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/50">狀態未知</span>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <!-- 整合總日誌筆數至頂部卡片 -->
-                        <div class="text-right border-r border-zinc-200 dark:border-zinc-800 pr-3 mr-1 hidden sm:block">
-                            <span class="text-[10px] font-mono uppercase text-zinc-400 block">總 Log 筆數</span>
-                            <span id="stat-total-logs-top" class="text-lg font-mono font-semibold text-zinc-800 dark:text-zinc-200">0</span>
+                    <div class="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex flex-wrap items-center justify-between text-xs text-zinc-500 gap-2 font-mono">
+                        <div class="truncate">
+                            <span id="status-note">無備註紀錄</span>
                         </div>
-                        <span id="status-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-medium tracking-wider bg-zinc-100 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/50">狀態未知</span>
-                    </div>
-                </div>
-                <div class="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex flex-wrap items-center justify-between text-xs text-zinc-500 gap-2 font-mono">
-                    <div class="truncate">
-                        <span id="status-note">無備註紀錄</span>
-                    </div>
-                    <div class="whitespace-nowrap flex items-center space-x-2">
-                        <span id="status-time">-</span>
-                        <span id="live-clock-badge" class="text-[10px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">自動計時中</span>
+                        <div class="whitespace-nowrap flex items-center space-x-2">
+                            <span id="status-time">-</span>
+                            <span id="live-clock-badge" class="text-[10px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">自動計時中</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 數據視覺化圖表區塊 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Log 數量趨勢圖 -->
-            <div class="md:col-span-2 bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg p-4 shadow-xs dark:shadow-none flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                        <i class="fa-solid fa-chart-line text-indigo-500"></i>
-                        <span>Log 時間流量趨勢 (每 3 小時累積)</span>
-                    </span>
-                    <span id="trend-time-range" class="text-[10px] font-mono text-zinc-400">過去 24 小時</span>
+            <!-- 數據視覺化圖表區塊 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2 bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg p-4 shadow-xs dark:shadow-none flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-chart-line text-indigo-500"></i>
+                            <span>Log 時間流量趨勢 (每 3 小時累積)</span>
+                        </span>
+                        <span id="trend-time-range" class="text-[10px] font-mono text-zinc-400">過去 24 小時</span>
+                    </div>
+                    <div class="h-44 w-full relative">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
-                <div class="h-44 w-full relative">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
 
-            <!-- Log 類型占比圓餅圖 -->
-            <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg p-4 shadow-xs dark:shadow-none flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                        <i class="fa-solid fa-chart-pie text-emerald-500"></i>
-                        <span>Log 類型分佈占比</span>
-                    </span>
-                </div>
-                <div class="h-44 w-full relative flex items-center justify-center">
-                    <canvas id="typeChart"></canvas>
+                <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg p-4 shadow-xs dark:shadow-none flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-chart-pie text-emerald-500"></i>
+                            <span>Log 類型分佈占比</span>
+                        </span>
+                    </div>
+                    <div class="h-44 w-full relative flex items-center justify-center">
+                        <canvas id="typeChart"></canvas>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 控制與篩選區塊 -->
-        <div class="flex flex-col md:flex-row gap-3 items-center justify-between pt-1">
-            
-            <!-- 分類標籤頁 (Tabs) -->
-            <div class="flex items-center space-x-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none" id="type-filters">
-                <button data-type="ALL" class="filter-tab active px-2.5 py-1 rounded text-xs font-medium bg-zinc-900 text-white dark:bg-zinc-200 dark:text-zinc-900 transition whitespace-nowrap cursor-pointer">全部</button>
-                <button data-type="PINNED" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">釘選</button>
-                <button data-type="NOTED" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">有備註</button>
-                <button data-type="SYSTEM" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">系統</button>
-                <button data-type="CHAT" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">對話</button>
-                <button data-type="GAME" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">遊戲</button>
-                <button data-type="BROADCAST" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">廣播</button>
-                <button data-type="ACTION" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">動作</button>
-                <button data-type="SECURITY" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">資安</button>
-                <button data-type="ERROR" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">錯誤</button>
-                <button data-type="DM_REJECTED" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">私訊阻擋</button>
-            </div>
+            <!-- 控制與篩選區塊 -->
+            <div class="flex flex-col md:flex-row gap-3 items-center justify-between pt-1">
+                <div class="flex items-center space-x-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none" id="type-filters">
+                    <button data-type="ALL" class="filter-tab active px-2.5 py-1 rounded text-xs font-medium bg-zinc-900 text-white dark:bg-zinc-200 dark:text-zinc-900 transition whitespace-nowrap cursor-pointer">全部</button>
+                    <button data-type="PINNED" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">釘選</button>
+                    <button data-type="NOTED" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">有備註</button>
+                    <button data-type="SYSTEM" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">系統</button>
+                    <button data-type="CHAT" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">對話</button>
+                    <button data-type="GAME" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">遊戲</button>
+                    <button data-type="BROADCAST" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">廣播</button>
+                    <button data-type="ACTION" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">動作</button>
+                    <button data-type="SECURITY" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">資安</button>
+                    <button data-type="ERROR" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">錯誤</button>
+                    <button data-type="DM_REJECTED" class="filter-tab px-2.5 py-1 rounded text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition whitespace-nowrap cursor-pointer">私訊阻擋</button>
+                </div>
 
-            <!-- 控制功能項：時間篩選 + 搜尋框 + 匯出 + 清空 -->
-            <div class="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto justify-end">
-                <select id="date-range-filter" class="px-2.5 py-1.5 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 font-mono transition cursor-pointer">
-                    <option value="ALL">所有時間</option>
-                    <option value="TODAY">今天</option>
-                    <option value="7DAYS">近 7 天</option>
-                    <option value="30DAYS">近 30 天</option>
-                </select>
+                <div class="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto justify-end">
+                    <select id="date-range-filter" class="px-2.5 py-1.5 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 font-mono transition cursor-pointer">
+                        <option value="ALL">所有時間</option>
+                        <option value="TODAY">今天</option>
+                        <option value="7DAYS">近 7 天</option>
+                        <option value="30DAYS">近 30 天</option>
+                    </select>
 
-                <!-- 關鍵字搜尋框 -->
-                <input type="text" id="search-input" placeholder="搜尋 Log 關鍵字..." class="w-full sm:w-44 px-3 py-1.5 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition font-sans shadow-xs dark:shadow-none">
-                
-                <!-- Log 匯出功能選單 -->
-                <div class="relative inline-block text-left">
-                    <button id="export-dropdown-btn" class="px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded text-xs font-mono transition flex items-center space-x-1 cursor-pointer">
-                        <i class="fa-solid fa-file-export text-[11px]"></i>
-                        <span>匯出</span>
+                    <input type="text" id="search-input" placeholder="搜尋 Log 關鍵字..." class="w-full sm:w-44 px-3 py-1.5 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition font-sans shadow-xs dark:shadow-none">
+                    
+                    <!-- 僅管理員可見的匯出選單 -->
+                    <div id="export-dropdown-wrapper" class="hidden relative inline-block text-left">
+                        <button id="export-dropdown-btn" class="px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded text-xs font-mono transition flex items-center space-x-1 cursor-pointer">
+                            <i class="fa-solid fa-file-export text-[11px]"></i>
+                            <span>匯出</span>
+                        </button>
+                        <div id="export-dropdown-menu" class="hidden absolute right-0 mt-1 w-32 bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg z-20 py-1 text-xs font-mono">
+                            <button onclick="exportLogs('csv')" class="w-full text-left px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-file-csv text-emerald-500"></i> CSV 格式
+                            </button>
+                            <button onclick="exportLogs('json')" class="w-full text-left px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-file-code text-amber-500"></i> JSON 格式
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="clear-all-btn" class="hidden px-2.5 py-1.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded text-xs font-mono transition whitespace-nowrap cursor-pointer items-center space-x-1" title="清空未釘選的 Log 紀錄">
+                        <i class="fa-solid fa-trash-can text-[11px]"></i>
+                        <span>清空</span>
                     </button>
-                    <!-- 下拉選單 -->
-                    <div id="export-dropdown-menu" class="hidden absolute right-0 mt-1 w-32 bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg z-20 py-1 text-xs font-mono">
-                        <button onclick="exportLogs('csv')" class="w-full text-left px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer">
-                            <i class="fa-solid fa-file-csv text-emerald-500"></i> CSV 格式
-                        </button>
-                        <button onclick="exportLogs('json')" class="w-full text-left px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 cursor-pointer">
-                            <i class="fa-solid fa-file-code text-amber-500"></i> JSON 格式
-                        </button>
-                    </div>
                 </div>
+            </div>
 
-                <!-- 專屬：一鍵清空所有 Log 按鈕 -->
-                <button id="clear-all-btn" class="hidden px-2.5 py-1.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded text-xs font-mono transition whitespace-nowrap cursor-pointer items-center space-x-1" title="清空未釘選的 Log 紀錄">
-                    <i class="fa-solid fa-trash-can text-[11px]"></i>
-                    <span>清空</span>
-                </button>
+            <!-- 日誌表格區域 -->
+            <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg overflow-hidden shadow-xs dark:shadow-none transition-colors duration-200">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs table-fixed">
+                        <thead class="bg-zinc-50 dark:bg-zinc-900/40 text-zinc-500 font-mono text-[11px] uppercase border-b border-zinc-200 dark:border-zinc-800/80">
+                            <tr>
+                                <th class="py-3 px-4 w-32 sm:w-40 font-normal">時間戳記</th>
+                                <th class="py-3 px-4 w-24 sm:w-28 font-normal">類型</th>
+                                <th class="py-3 px-4 font-normal">訊息內容</th>
+                                <th id="th-details" class="py-3 px-4 w-44 sm:w-56 text-right font-normal">詳細內容與操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table-body" class="divide-y divide-zinc-100 dark:divide-zinc-800/40 text-zinc-700 dark:text-zinc-300 font-sans">
+                            <tr>
+                                <td colspan="4" class="py-12 text-center text-zinc-400 dark:text-zinc-600 font-mono">
+                                    正在同步即時日誌資料...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/30 border-t border-zinc-100 dark:border-zinc-800/50 flex justify-between items-center text-[11px] font-mono text-zinc-500">
+                    <span id="filtered-count">0 / 0 筆紀錄</span>
+                    <span>即時同步中 (自動更新)</span>
+                </div>
             </div>
         </div>
 
-        <!-- 日誌表格區域 -->
-        <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg overflow-hidden shadow-xs dark:shadow-none transition-colors duration-200">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs table-fixed">
-                    <thead class="bg-zinc-50 dark:bg-zinc-900/40 text-zinc-500 font-mono text-[11px] uppercase border-b border-zinc-200 dark:border-zinc-800/80">
-                        <tr>
-                            <th class="py-3 px-4 w-32 sm:w-40 font-normal">時間戳記</th>
-                            <th class="py-3 px-4 w-24 sm:w-28 font-normal">類型</th>
-                            <th class="py-3 px-4 font-normal">訊息內容</th>
-                            <th id="th-details" class="py-3 px-4 w-44 sm:w-56 text-right font-normal">詳細內容與操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logs-table-body" class="divide-y divide-zinc-100 dark:divide-zinc-800/40 text-zinc-700 dark:text-zinc-300 font-sans">
-                        <!-- 動態插入列 -->
-                        <tr>
-                            <td colspan="4" class="py-12 text-center text-zinc-400 dark:text-zinc-600 font-mono">
-                                正在同步即時日誌資料...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- 底欄資訊 -->
-            <div class="px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/30 border-t border-zinc-100 dark:border-zinc-800/50 flex justify-between items-center text-[11px] font-mono text-zinc-500">
-                <span id="filtered-count">0 / 0 筆紀錄</span>
-                <span>即時同步中 (自動更新)</span>
+        <!-- ==================== 聊天室分頁 (Chatroom View) ==================== -->
+        <div id="view-chat" class="space-y-4 hidden">
+            <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800/80 rounded-lg p-5 shadow-xs dark:shadow-none flex flex-col space-y-4 transition-colors duration-200">
+                <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-mono font-semibold text-zinc-900 dark:text-white uppercase">Bally & Ethan 內部交辦聊天室</h3>
+                            <p class="text-xs text-zinc-500">提供系統管理員與測試員進行即時交辦事項溝通與對話紀錄</p>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-800">訊息上限 20 條</span>
+                </div>
+
+                <!-- 聊天訊息歷史顯示區塊 -->
+                <div id="mini-chat-messages" class="h-[520px] overflow-y-auto space-y-3 pr-2 font-sans text-xs flex flex-col bg-zinc-50 dark:bg-zinc-950/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800/60">
+                    <div class="text-center text-zinc-400 dark:text-zinc-600 font-mono py-16">正在載入對話...</div>
+                </div>
+
+                <!-- 聊天輸入框 -->
+                <form id="mini-chat-form" class="flex items-center space-x-3 pt-2">
+                    <input type="text" id="mini-chat-input" placeholder="輸入想對彼此說的交辦事項..." autocomplete="off" class="flex-grow px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-indigo-500 transition">
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-mono rounded-lg transition shrink-0 cursor-pointer flex items-center space-x-1.5 shadow-xs">
+                        <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                        <span>發送訊息</span>
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -295,7 +342,7 @@
     <!-- Toast 提示框容器 -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- 整合式 備註與詳細紀錄 Modal -->
+    <!-- 備註與詳細紀錄 Modal -->
     <div id="note-modal" class="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-lg flex flex-col shadow-2xl overflow-hidden max-h-[85vh]">
             <div class="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
@@ -305,8 +352,6 @@
                 </button>
             </div>
             <div class="p-4 space-y-4 bg-white dark:bg-cardBg overflow-y-auto">
-
-                <!-- 備註快捷標籤按鈕列 -->
                 <div class="space-y-1">
                     <label class="block font-mono text-[10px] uppercase text-zinc-400">快捷標籤點擊插入：</label>
                     <div class="flex flex-wrap gap-1.5" id="note-quick-tags">
@@ -318,7 +363,6 @@
                     </div>
                 </div>
 
-                <!-- Bally 備註區塊 -->
                 <div id="bally-note-section" class="space-y-1.5 hidden pt-2 border-t border-zinc-100 dark:border-zinc-800">
                     <label class="block font-mono text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                         <i class="fa-solid fa-user-shield mr-1"></i>Bally's 備註
@@ -326,7 +370,6 @@
                     <textarea id="bally-note-textarea" rows="3" placeholder="輸入 Bally 的備註..." class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 font-sans resize-none"></textarea>
                 </div>
 
-                <!-- Ethan 備註區塊 -->
                 <div id="ethan-note-section" class="space-y-1.5 hidden pt-2 border-t border-zinc-100 dark:border-zinc-800">
                     <label class="block font-mono text-[11px] font-semibold text-amber-600 dark:text-amber-400">
                         <i class="fa-solid fa-user-gear mr-1"></i>Ethan's 備註
@@ -337,7 +380,6 @@
                     </p>
                 </div>
 
-                <!-- JSON 原始資料區塊 -->
                 <div id="json-section" class="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800 hidden">
                     <div class="flex items-center justify-between">
                         <label class="font-mono text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
@@ -382,7 +424,7 @@
         </div>
     </div>
 
-    <!-- 修改密碼 Modal -->
+    <!-- 修改密碼 Modal (同步儲存至 Firebase Realtime Database /passcodes) -->
     <div id="change-password-modal" class="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-sm flex flex-col shadow-2xl overflow-hidden p-5 space-y-4">
             <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
@@ -422,19 +464,17 @@
         </div>
     </div>
 
-    <!-- Firebase JavaScript Module -->
+    <!-- Firebase JavaScript Module (Cloud Passcode & Data Sync) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, onValue, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, onValue, update, remove, push, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         let trendChartInstance = null;
         let typeChartInstance = null;
         let currentDateRange = 'ALL';
         
-        // 全域紀錄當前已被展開的訊息區塊 ID，以防止即時更新時畫面重製導致狀態遺失
         const expandedState = new Set();
 
-        // 預設帳號與權限設定
         const BASE_ACCOUNTS = {
             "bally": {
                 userKey: "bally",
@@ -443,6 +483,7 @@
                 role: "admin",
                 canViewJson: true,
                 canDelete: true,
+                canExport: true,
                 iconClass: "fa-solid fa-user-shield text-emerald-400"
             },
             "ethan": {
@@ -452,32 +493,22 @@
                 role: "tester",
                 canViewJson: false,
                 canDelete: false,
+                canExport: false,
                 iconClass: "fa-solid fa-user-gear text-amber-400"
             }
         };
 
-        // 讀取/儲存動態密碼
-        function getCustomPasscodes() {
-            try {
-                const saved = localStorage.getItem('bbot_passcodes');
-                return saved ? JSON.parse(saved) : {};
-            } catch (e) {
-                return {};
-            }
-        }
+        // Firebase Realtime Database 雲端密碼資料庫快取
+        let cloudPasscodes = {
+            bally: "0515",
+            ethan: "0216"
+        };
 
         function getUserPasscode(userKey) {
-            const custom = getCustomPasscodes();
-            if (custom && custom[userKey]) {
-                return custom[userKey];
+            if (cloudPasscodes && cloudPasscodes[userKey]) {
+                return cloudPasscodes[userKey];
             }
             return BASE_ACCOUNTS[userKey] ? BASE_ACCOUNTS[userKey].defaultPasscode : null;
-        }
-
-        function setUserPasscode(userKey, newPasscode) {
-            const custom = getCustomPasscodes();
-            custom[userKey] = newPasscode;
-            localStorage.setItem('bbot_passcodes', JSON.stringify(custom));
         }
 
         function authenticatePasscode(inputPasscode) {
@@ -493,7 +524,6 @@
         let activeNoteContext = { logId: null };
         let activeDeleteContext = { type: null, logId: null };
 
-        // 用戶提供的 Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyCNk1vE7vubqoYEtn3HGzeabolYq18619A",
             authDomain: "b-bot-website.firebaseapp.com",
@@ -504,7 +534,6 @@
             appId: "1:508997126688:web:55fb45728235763e808a45"
         };
 
-        // 初始化 Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
@@ -512,7 +541,65 @@
         let currentTypeFilter = 'ALL';
         let currentSearchQuery = '';
 
-        // Toast 通知功能 (取代預設 Alert)
+        // 監聽雲端密碼同步 (路徑: /passcodes)
+        const passcodesRef = ref(database, 'passcodes');
+        onValue(passcodesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                cloudPasscodes = {
+                    bally: data.bally || "0515",
+                    ethan: data.ethan || "0216"
+                };
+            } else {
+                // 如果遠端尚無紀錄，初始化寫入預設密碼
+                set(passcodesRef, {
+                    bally: "0515",
+                    ethan: "0216"
+                });
+            }
+        });
+
+        // 頁面切換主邏輯函數
+        window.switchMainTab = function(tabName) {
+            const dashView = document.getElementById('view-dashboard');
+            const chatView = document.getElementById('view-chat');
+            const tabDashBtn = document.getElementById('nav-tab-dashboard');
+            const tabChatBtn = document.getElementById('nav-tab-chat');
+            const mTabDash = document.getElementById('m-tab-dash');
+            const mTabChat = document.getElementById('m-tab-chat');
+
+            if (tabName === 'dashboard') {
+                dashView.classList.remove('hidden');
+                chatView.classList.add('hidden');
+                
+                tabDashBtn.className = "px-3 py-1 text-xs font-mono font-medium rounded-md transition bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs cursor-pointer flex items-center space-x-1.5";
+                tabChatBtn.className = "px-3 py-1 text-xs font-mono font-medium rounded-md transition text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer flex items-center space-x-1.5";
+                
+                if (mTabDash && mTabChat) {
+                    mTabDash.className = "flex-1 py-1.5 px-3 text-xs font-mono font-medium rounded bg-zinc-900 text-white dark:bg-zinc-200 dark:text-zinc-900 text-center transition";
+                    mTabChat.className = "flex-1 py-1.5 px-3 text-xs font-mono font-medium rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 text-center transition";
+                }
+                
+                setTimeout(() => renderCharts(), 50);
+            } else if (tabName === 'chat') {
+                dashView.classList.add('hidden');
+                chatView.classList.remove('hidden');
+
+                tabChatBtn.className = "px-3 py-1 text-xs font-mono font-medium rounded-md transition bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs cursor-pointer flex items-center space-x-1.5";
+                tabDashBtn.className = "px-3 py-1 text-xs font-mono font-medium rounded-md transition text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer flex items-center space-x-1.5";
+                
+                if (mTabDash && mTabChat) {
+                    mTabChat.className = "flex-1 py-1.5 px-3 text-xs font-mono font-medium rounded bg-zinc-900 text-white dark:bg-zinc-200 dark:text-zinc-900 text-center transition";
+                    mTabDash.className = "flex-1 py-1.5 px-3 text-xs font-mono font-medium rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 text-center transition";
+                }
+
+                const chatContainer = document.getElementById('mini-chat-messages');
+                if (chatContainer) {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            }
+        };
+
         window.showToast = function(message, isError = false) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -530,7 +617,6 @@
             }, 3000);
         };
 
-        // 圖表渲染函式 (支援動態時間軸)
         function renderCharts() {
             if (typeof Chart === 'undefined') return;
 
@@ -589,7 +675,7 @@
                             backgroundColor: 'rgba(99, 102, 241, 0.15)',
                             borderWidth: 2,
                             fill: true,
-                            tension: 0.2,
+                            tension: 0,
                             pointRadius: 4,
                             pointHoverRadius: 6,
                             pointBackgroundColor: '#818cf8',
@@ -674,7 +760,6 @@
             }
         }
 
-        // 啟動定時器，每 60 秒自動更新時間軸與圖表（免重載）
         function initAutoTimer() {
             setInterval(() => {
                 if (allLogs.length > 0) {
@@ -683,7 +768,6 @@
             }, 60000);
         }
 
-        // 深淺色主題切換邏輯
         function initThemeToggle() {
             const themeBtn = document.getElementById('theme-toggle-btn');
             const themeIcon = document.getElementById('theme-toggle-icon');
@@ -717,7 +801,6 @@
             }
         }
 
-        // 身分驗證處理邏輯
         function initAuth() {
             const savedUserKey = sessionStorage.getItem('bbot_user_key');
             if (savedUserKey && BASE_ACCOUNTS[savedUserKey]) {
@@ -768,6 +851,7 @@
             const logoutBtn = document.getElementById('logout-btn');
             const changePwdBtn = document.getElementById('change-password-btn');
             const clearAllBtn = document.getElementById('clear-all-btn');
+            const exportWrapper = document.getElementById('export-dropdown-wrapper');
 
             if (userBadge && userName && userIcon) {
                 userBadge.classList.remove('hidden');
@@ -795,6 +879,16 @@
                 }
             }
 
+            if (exportWrapper) {
+                if (currentUser.canExport) {
+                    exportWrapper.classList.remove('hidden');
+                    exportWrapper.classList.add('inline-block');
+                } else {
+                    exportWrapper.classList.add('hidden');
+                    exportWrapper.classList.remove('inline-block');
+                }
+            }
+
             renderLogsTable();
         }
 
@@ -807,6 +901,7 @@
             document.getElementById('logout-btn').classList.add('hidden');
             document.getElementById('change-password-btn').classList.add('hidden');
             document.getElementById('clear-all-btn').classList.add('hidden');
+            document.getElementById('export-dropdown-wrapper').classList.add('hidden');
 
             showLoginModal();
         }
@@ -837,7 +932,7 @@
             if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
             if (form) {
-                form.addEventListener('submit', (e) => {
+                form.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     if (!currentUser) return;
 
@@ -865,14 +960,25 @@
                         return;
                     }
 
-                    setUserPasscode(currentUser.userKey, newInput);
+                    try {
+                        // 更新 Firebase 雲端密碼資料庫
+                        cloudPasscodes[currentUser.userKey] = newInput;
+                        await update(ref(database, 'passcodes'), {
+                            [currentUser.userKey]: newInput
+                        });
 
-                    msgBox.innerText = "密碼修改成功！下次請使用新密碼登入。";
-                    msgBox.className = "text-xs p-2 rounded font-mono text-center bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/50";
+                        msgBox.innerText = "密碼修改成功並已同步至 Firebase 雲端！";
+                        msgBox.className = "text-xs p-2 rounded font-mono text-center bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/50";
+                        showToast('密碼更新成功！');
 
-                    setTimeout(() => {
-                        closeModal();
-                    }, 1200);
+                        setTimeout(() => {
+                            closeModal();
+                        }, 1200);
+                    } catch (err) {
+                        console.error("Password Update Error:", err);
+                        msgBox.innerText = "雲端同步失敗，請檢查網路連線！";
+                        msgBox.className = "text-xs p-2 rounded font-mono text-center bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-300 dark:border-rose-900/50";
+                    }
                 });
             }
         }
@@ -887,46 +993,14 @@
         }
 
         const eventConfigs = {
-            SYSTEM: {
-                icon: 'fa-solid fa-server',
-                badgeStyle: 'border border-cyan-200 dark:border-cyan-500/30 text-cyan-800 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/20',
-                label: 'SYSTEM'
-            },
-            CHAT: {
-                icon: 'fa-solid fa-comments',
-                badgeStyle: 'border border-indigo-200 dark:border-indigo-500/30 text-indigo-800 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/20',
-                label: 'CHAT'
-            },
-            GAME: {
-                icon: 'fa-solid fa-gamepad',
-                badgeStyle: 'border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20',
-                label: 'GAME'
-            },
-            BROADCAST: {
-                icon: 'fa-solid fa-bullhorn',
-                badgeStyle: 'border border-purple-200 dark:border-purple-500/30 text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/20',
-                label: 'BROADCAST'
-            },
-            SECURITY: {
-                icon: 'fa-solid fa-shield-halved',
-                badgeStyle: 'border border-rose-200 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30',
-                label: 'SECURITY'
-            },
-            ERROR: {
-                icon: 'fa-solid fa-triangle-exclamation',
-                badgeStyle: 'border border-red-200 dark:border-red-500/40 text-red-800 dark:text-red-400 bg-red-50 dark:bg-red-950/30',
-                label: 'ERROR'
-            },
-            ACTION: {
-                icon: 'fa-solid fa-bolt',
-                badgeStyle: 'border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/20',
-                label: 'ACTION'
-            },
-            DM_REJECTED: {
-                icon: 'fa-solid fa-user-slash',
-                badgeStyle: 'border border-fuchsia-300 dark:border-fuchsia-500/40 text-fuchsia-800 dark:text-fuchsia-300 bg-fuchsia-50 dark:bg-fuchsia-950/30',
-                label: 'DM REJECT'
-            }
+            SYSTEM: { icon: 'fa-solid fa-server', badgeStyle: 'border border-cyan-200 dark:border-cyan-500/30 text-cyan-800 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/20', label: 'SYSTEM' },
+            CHAT: { icon: 'fa-solid fa-comments', badgeStyle: 'border border-indigo-200 dark:border-indigo-500/30 text-indigo-800 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/20', label: 'CHAT' },
+            GAME: { icon: 'fa-solid fa-gamepad', badgeStyle: 'border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20', label: 'GAME' },
+            BROADCAST: { icon: 'fa-solid fa-bullhorn', badgeStyle: 'border border-purple-200 dark:border-purple-500/30 text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/20', label: 'BROADCAST' },
+            SECURITY: { icon: 'fa-solid fa-shield-halved', badgeStyle: 'border border-rose-200 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30', label: 'SECURITY' },
+            ERROR: { icon: 'fa-solid fa-triangle-exclamation', badgeStyle: 'border border-red-200 dark:border-red-500/40 text-red-800 dark:text-red-400 bg-red-50 dark:bg-red-950/30', label: 'ERROR' },
+            ACTION: { icon: 'fa-solid fa-bolt', badgeStyle: 'border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/20', label: 'ACTION' },
+            DM_REJECTED: { icon: 'fa-solid fa-user-slash', badgeStyle: 'border border-fuchsia-300 dark:border-fuchsia-500/40 text-fuchsia-800 dark:text-fuchsia-300 bg-fuchsia-50 dark:bg-fuchsia-950/30', label: 'DM REJECT' }
         };
 
         const statusRef = ref(database, 'status');
@@ -945,7 +1019,6 @@
 
             if (data) {
                 const isOnline = data.status === 'online';
-                
                 if (isOnline) {
                     dot.className = "w-2.5 h-2.5 rounded-full dot-online";
                     statusText.innerText = "線上 (ONLINE)";
@@ -956,25 +1029,109 @@
                     dot.className = "w-2.5 h-2.5 rounded-full dot-offline";
                     statusText.innerText = "離線 (OFFLINE)";
                     statusText.className = "text-lg font-mono tracking-wide text-rose-600 dark:text-rose-400";
-                    statusBadge.className = "px-2 py-0.5 rounded text-[10px] font-mono tracking-wider bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-400 border border-rose-300 dark:border-rose-900/50";
+                    statusBadge.className = "px-2 py-0.5 rounded text-[10px] font-mono tracking-wider bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-400 border border-rose-300 dark:border-rose-800/50";
                     statusBadge.innerText = "已停止";
                 }
-
                 statusNote.innerText = data.note || '無備註紀錄';
                 statusTime.innerText = data.last_updated || '-';
-            } else {
-                statusText.innerText = "無狀態資料";
-                statusNote.innerText = "/status 尚無狀態紀錄";
             }
-        }, (error) => {
-            console.error("Firebase Status Listener Error:", error);
-            document.getElementById('connection-text').innerText = "連線中斷";
         });
+
+        // 監聽聊天室資料 (路徑: mini_chat)
+        const chatRef = ref(database, 'mini_chat');
+        onValue(chatRef, (snapshot) => {
+            const data = snapshot.val();
+            const container = document.getElementById('mini-chat-messages');
+            if (!container) return;
+
+            if (!data) {
+                container.innerHTML = `<div class="text-center text-zinc-400 dark:text-zinc-600 font-mono py-16">尚無對話紀錄，趕緊發送第一條訊息吧！</div>`;
+                return;
+            }
+
+            let chatList = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+            chatList.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            container.innerHTML = chatList.map(msg => {
+                const isBally = msg.sender === 'bally';
+                const senderName = isBally ? 'Bally 管理員' : 'Ethan 測試員';
+                const timeStr = msg.timestamp ? msg.timestamp.split(' ')[1] : '';
+
+                if (isBally) {
+                    return `
+                        <div class="flex flex-col items-end space-y-0.5">
+                            <div class="flex items-center space-x-1.5 text-[10px] font-mono text-zinc-400">
+                                <span>${timeStr}</span>
+                                <span class="text-emerald-500 font-semibold">${senderName}</span>
+                            </div>
+                            <div class="bg-emerald-600 text-white px-3.5 py-2 rounded-l-lg rounded-br-lg max-w-[80%] break-words text-xs shadow-xs">
+                                ${escapeHtml(msg.text)}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="flex flex-col items-start space-y-0.5">
+                            <div class="flex items-center space-x-1.5 text-[10px] font-mono text-zinc-400">
+                                <span class="text-amber-500 font-semibold">${senderName}</span>
+                                <span>${timeStr}</span>
+                            </div>
+                            <div class="bg-zinc-800 text-zinc-100 border border-zinc-700/60 px-3.5 py-2 rounded-r-lg rounded-bl-lg max-w-[80%] break-words text-xs shadow-xs">
+                                ${escapeHtml(msg.text)}
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        });
+
+        // 處理聊天發送訊息 (限制最多 20 條)
+        const chatForm = document.getElementById('mini-chat-form');
+        if (chatForm) {
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentUser) {
+                    showToast('請先登入系統才能發送訊息！', true);
+                    return;
+                }
+
+                const inputElem = document.getElementById('mini-chat-input');
+                const text = (inputElem.value || '').trim();
+                if (!text) return;
+
+                try {
+                    const snap = await new Promise((resolve) => {
+                        onValue(chatRef, (s) => resolve(s), { onlyOnce: true });
+                    });
+
+                    const chatData = snap.val() || {};
+                    let keys = Object.keys(chatData);
+
+                    if (keys.length >= 20) {
+                        let sortedKeys = keys.sort((a, b) => new Date(chatData[a].timestamp) - new Date(chatData[b].timestamp));
+                        await remove(ref(database, `mini_chat/${sortedKeys[0]}`));
+                    }
+
+                    const newMsgRef = push(chatRef);
+                    await set(newMsgRef, {
+                        sender: currentUser.userKey,
+                        text: text,
+                        timestamp: getFormattedTimestamp()
+                    });
+
+                    inputElem.value = '';
+                } catch (err) {
+                    console.error("Chat Send Error:", err);
+                    showToast('發送訊息失敗，請稍後再試', true);
+                }
+            });
+        }
 
         const logsRef = ref(database, 'logs');
         onValue(logsRef, (snapshot) => {
             const data = snapshot.val();
-            
             if (!data) {
                 allLogs = [];
             } else {
@@ -983,7 +1140,6 @@
                     ...val
                 })).reverse();
             }
-
             updateStats();
             renderCharts();
             renderLogsTable();
@@ -997,10 +1153,8 @@
                         b.classList.remove('bg-zinc-900', 'text-white', 'dark:bg-zinc-200', 'dark:text-zinc-900', 'active');
                         b.classList.add('text-zinc-600', 'dark:text-zinc-400', 'hover:text-zinc-900', 'dark:hover:text-zinc-200');
                     });
-
                     btn.classList.remove('text-zinc-600', 'dark:text-zinc-400', 'hover:text-zinc-900', 'dark:hover:text-zinc-200');
                     btn.classList.add('bg-zinc-900', 'text-white', 'dark:bg-zinc-200', 'dark:text-zinc-900', 'active');
-
                     currentTypeFilter = btn.getAttribute('data-type') || 'ALL';
                     renderLogsTable();
                 });
@@ -1033,54 +1187,159 @@
                     exportMenu.classList.add('hidden');
                 });
             }
+
+            // 備註 Modal 事件
+            const closeNoteBtn = document.getElementById('close-note-modal-btn');
+            const cancelNoteBtn = document.getElementById('cancel-note-btn');
+            const saveNoteBtn = document.getElementById('save-note-btn');
+            const noteModal = document.getElementById('note-modal');
+
+            function closeNoteModal() {
+                noteModal.classList.add('hidden');
+                activeNoteContext = { logId: null };
+            }
+
+            if (closeNoteBtn) closeNoteBtn.addEventListener('click', closeNoteModal);
+            if (cancelNoteBtn) cancelNoteBtn.addEventListener('click', closeNoteModal);
+
+            if (saveNoteBtn) {
+                saveNoteBtn.addEventListener('click', async () => {
+                    if (!activeNoteContext.logId || !currentUser) return;
+                    const updates = {};
+                    if (currentUser.userKey === 'bally') {
+                        const ballyVal = document.getElementById('bally-note-textarea').value;
+                        updates.bally_note = ballyVal;
+                    }
+                    if (currentUser.userKey === 'ethan') {
+                        const ethanVal = document.getElementById('ethan-note-textarea').value;
+                        updates.ethan_note = ethanVal;
+                    }
+
+                    try {
+                        await update(ref(database, `logs/${activeNoteContext.logId}`), updates);
+                        showToast('備註儲存成功！');
+                        closeNoteModal();
+                    } catch (err) {
+                        console.error("Save Note Error:", err);
+                        showToast('儲存失敗，請稍後再試', true);
+                    }
+                });
+            }
+
+            // 複製 JSON 按鈕
+            const copyJsonBtn = document.getElementById('copy-json-btn');
+            if (copyJsonBtn) {
+                copyJsonBtn.addEventListener('click', () => {
+                    const text = document.getElementById('modal-json-content').innerText;
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast('JSON 內容已成功複製！');
+                    } catch (err) {
+                        showToast('複製失敗', true);
+                    }
+                    textArea.remove();
+                });
+            }
+
+            // 刪除 Modal 事件
+            const deleteModal = document.getElementById('delete-modal');
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+            if (cancelDeleteBtn) {
+                cancelDeleteBtn.addEventListener('click', () => {
+                    deleteModal.classList.add('hidden');
+                    activeDeleteContext = { type: null, logId: null };
+                });
+            }
+
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', async () => {
+                    try {
+                        if (activeDeleteContext.type === 'single' && activeDeleteContext.logId) {
+                            await remove(ref(database, `logs/${activeDeleteContext.logId}`));
+                            showToast('已成功刪除該筆 Log！');
+                        } else if (activeDeleteContext.type === 'all') {
+                            const unpinnedLogs = allLogs.filter(l => !l.pinned);
+                            for (const l of unpinnedLogs) {
+                                await remove(ref(database, `logs/${l.id}`));
+                            }
+                            showToast('已成功清空所有未釘選的 Log！');
+                        }
+                    } catch (err) {
+                        console.error("Delete Error:", err);
+                        showToast('刪除作業失敗', true);
+                    }
+                    deleteModal.classList.add('hidden');
+                    activeDeleteContext = { type: null, logId: null };
+                });
+            }
+
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', () => {
+                    if (!currentUser || !currentUser.canDelete) return;
+                    activeDeleteContext = { type: 'all', logId: null };
+                    document.getElementById('delete-modal-title').innerText = "確認清空未釘選紀錄";
+                    document.getElementById('delete-modal-desc').innerText = "此動作將刪除所有未被釘選的 Log 紀錄，確定要執行嗎？";
+                    deleteModal.classList.remove('hidden');
+                });
+            }
         }
 
         initThemeToggle();
         setupEventListeners();
         initAuth();
-        initAutoTimer(); // 啟動自動計時更新
+        initAutoTimer();
 
         function updateStats() {
             const totalTopElem = document.getElementById('stat-total-logs-top');
             if (totalTopElem) totalTopElem.innerText = allLogs.length;
         }
 
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const h = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            return `${y}-${m}-${d} ${h}:${min}:${s}`;
+        }
+
         function matchesDateRange(timestampStr) {
             if (currentDateRange === 'ALL' || !timestampStr) return true;
-            
             const logDate = new Date(timestampStr.replace(/-/g, '/'));
             if (isNaN(logDate.getTime())) return true;
-
             const now = new Date();
             if (currentDateRange === 'TODAY') {
                 return logDate.toDateString() === now.toDateString();
             } else if (currentDateRange === '7DAYS') {
-                const diffTime = Math.abs(now - logDate);
-                const diffDays = diffTime / (1000 * 60 * 60 * 24);
-                return diffDays <= 7;
+                return Math.abs(now - logDate) / (1000 * 60 * 60 * 24) <= 7;
             } else if (currentDateRange === '30DAYS') {
-                const diffTime = Math.abs(now - logDate);
-                const diffDays = diffTime / (1000 * 60 * 60 * 24);
-                return diffDays <= 30;
+                return Math.abs(now - logDate) / (1000 * 60 * 60 * 24) <= 30;
             }
             return true;
         }
 
         window.exportLogs = function(format) {
+            if (!currentUser || !currentUser.canExport) {
+                showToast('您無權限執行匯出作業！', true);
+                return;
+            }
             const logsToExport = getFilteredLogs();
             if (!logsToExport.length) {
                 showToast('當前篩選條件下無可匯出的 Log 數據！', true);
                 return;
             }
-
-            const isEthan = currentUser && currentUser.userKey === 'ethan';
             const nowStr = new Date().toISOString().slice(0, 10);
             if (format === 'json') {
-                const sanitizedLogs = isEthan ? logsToExport.map(l => {
-                    const { bally_note, ...rest } = l;
-                    return rest;
-                }) : logsToExport;
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sanitizedLogs, null, 2));
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logsToExport, null, 2));
                 const downloadAnchor = document.createElement('a');
                 downloadAnchor.setAttribute("href", dataStr);
                 downloadAnchor.setAttribute("download", `bbot_logs_${nowStr}.json`);
@@ -1090,21 +1349,16 @@
             } else if (format === 'csv') {
                 let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
                 csvContent += "ID,時間,類型,訊息,B-Bot回覆,使用者輸入內容,Bally備註,Ethan備註\n";
-
                 logsToExport.forEach(l => {
                     const msg = `"${(l.message || '').replace(/"/g, '""')}"`;
-                    
                     const reply = `"${(String(l.bot_reply || l.reply || l.response || l.bot_response || (l.details && (l.details.reply || l.details.response || l.details.bot_reply || l.details.bot_response)) || '') || '').replace(/"/g, '""')}"`;
-                    
-                    const userInput = l.user_input || l.input || l.prompt || l.query || l.content || l.text || (l.details && (l.details.user_input || l.details.input || l.details.prompt || l.details.query || l.details.content || l.details.text || l.details.message)) || '';
+                    const userInput = l.user_input || l.input || l.prompt || l.query || l.content || l.text || '';
                     const inputFieldStr = `"${(String(userInput) || '').replace(/"/g, '""')}"`;
-                    
-                    const bNoteStr = isEthan ? '' : (l.bally_note || '');
+                    const bNoteStr = l.bally_note || '';
                     const bNote = `"${bNoteStr.replace(/"/g, '""')}"`;
                     const eNote = `"${(l.ethan_note || '').replace(/"/g, '""')}"`;
                     csvContent += `"${l.id}","${l.timestamp || ''}","${l.type || ''}",${msg},${reply},${inputFieldStr},${bNote},${eNote}\n`;
                 });
-
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
@@ -1117,13 +1371,7 @@
 
         window.insertTagToActiveNote = function(tag) {
             if (!currentUser) return;
-            let targetArea = null;
-            if (currentUser.userKey === 'bally') {
-                targetArea = document.getElementById('bally-note-textarea');
-            } else if (currentUser.userKey === 'ethan') {
-                targetArea = document.getElementById('ethan-note-textarea');
-            }
-
+            let targetArea = currentUser.userKey === 'bally' ? document.getElementById('bally-note-textarea') : document.getElementById('ethan-note-textarea');
             if (targetArea && !targetArea.disabled) {
                 const currentVal = targetArea.value.trim();
                 targetArea.value = currentVal ? `${currentVal} ${tag}` : tag;
@@ -1135,7 +1383,6 @@
             const isEthan = currentUser && currentUser.userKey === 'ethan';
             return allLogs.filter(log => {
                 if (!log) return false;
-
                 let matchType = true;
                 if (currentTypeFilter === 'PINNED') {
                     matchType = Boolean(log.pinned);
@@ -1153,25 +1400,12 @@
                     const idStr = String(log.id || '').toLowerCase();
                     const ballyNoteStr = isEthan ? '' : (log.bally_note || '');
                     const notesStr = String(ballyNoteStr + (log.ethan_note || '')).toLowerCase();
-                    const inputStr = String(log.user_input || log.input || log.prompt || log.query || log.content || log.text || '').toLowerCase();
-                    const replyStr = String(log.bot_reply || log.reply || log.response || log.bot_response || '').toLowerCase();
-
-                    matchSearch = msg.includes(currentSearchQuery) || 
-                                  detailsStr.includes(currentSearchQuery) || 
-                                  typeStr.includes(currentSearchQuery) ||
-                                  idStr.includes(currentSearchQuery) ||
-                                  notesStr.includes(currentSearchQuery) ||
-                                  inputStr.includes(currentSearchQuery) ||
-                                  replyStr.includes(currentSearchQuery);
+                    matchSearch = msg.includes(currentSearchQuery) || detailsStr.includes(currentSearchQuery) || typeStr.includes(currentSearchQuery) || idStr.includes(currentSearchQuery) || notesStr.includes(currentSearchQuery);
                 }
-
-                const matchDate = matchesDateRange(log.timestamp);
-                
-                return matchType && matchSearch && matchDate;
+                return matchType && matchSearch && matchesDateRange(log.timestamp);
             });
         }
 
-        // HTML 跳脫工具
         function escapeHtml(text) {
             if (!text) return '';
             return String(text)
@@ -1182,113 +1416,97 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // 格式化 Log 訊息與附加內容（預設標題在上方，內容在下方）
-        function formatLogMessage(log) {
-            const mainMsg = escapeHtml(log.message || '');
-            
-            // 優先取得 B-Bot 回覆
-            const botReply = log.bot_reply || log.reply || log.response || log.bot_response || (log.details && (log.details.reply || log.details.response || log.details.bot_reply || log.details.bot_response)) || '';
-            
-            // 取得使用者輸入內容（支援多種常見命名欄位）
-            const userInput = log.user_input || log.input || log.prompt || log.query || log.content || log.text || (log.details && (log.details.user_input || log.details.input || log.details.prompt || log.details.query || log.details.content || log.details.text || log.details.message)) || '';
-            
-            let extraHtml = '';
-            const uniqueId = `expand-content-${log.id}`;
-            const isAlreadyExpanded = expandedState.has(uniqueId);
+function formatLogMessage(log) {
+    const mainMsg = escapeHtml(log.message || '');
+    
+    // 提取機器人回覆 (支援外層與 details 內層)
+    const botReply = log.bot_reply || log.reply || log.response || log.bot_response || 
+                     (log.details && (log.details.reply || log.details.response || log.details.bot_reply || log.details.bot_response)) || '';
+                     
+    // 補強：提取使用者輸入 (新增 details 內層支援)
+    const userInput = log.user_input || log.input || log.prompt || log.query || log.content || log.text || 
+                      (log.details && (log.details.user_input || log.details.input || log.details.prompt || log.details.query || log.details.content || log.details.text)) || '';
+    
+    let extraHtml = '';
+    const uniqueId = `expand-content-${log.id}`;
+    const isAlreadyExpanded = expandedState.has(uniqueId);
 
-            if (botReply || userInput || (log.details && Object.keys(log.details).length > 0)) {
-                let detailsInnerHtml = '';
-
-                // 未展開狀態：左右並排且禁止自動換行 (whitespace-nowrap)
-                if (userInput || botReply) {
-                    const userTextStr = String(userInput || '無');
-                    const replyTextStr = String(botReply || '無');
-
-                    detailsInnerHtml += `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                            <div class="text-zinc-300 font-mono text-[11px] bg-zinc-900/90 p-2.5 rounded border border-zinc-800 flex items-center min-w-0 overflow-hidden">
-                                <span class="text-zinc-400 font-bold shrink-0 mr-1.5">使用者：</span>
-                                <span class="text-zinc-300 truncate whitespace-nowrap">${escapeHtml(userTextStr)}</span> 
-                            </div>
-                            <div class="text-indigo-200/90 font-mono text-[11px] bg-indigo-950/20 p-2.5 rounded border border-indigo-900/30 flex items-center min-w-0 overflow-hidden">
-                                <span class="text-indigo-400 font-bold shrink-0 mr-1.5">回覆：</span> 
-                                <span class="text-indigo-200 truncate whitespace-nowrap">${escapeHtml(replyTextStr)}</span>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                extraHtml = `
-                    <div class="mt-2 space-y-1.5">
-                        ${detailsInnerHtml}
-                        <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-1 text-[11px] text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
-                            <span>${isAlreadyExpanded ? '收起內容' : '展開查看全部'}</span>
-                            <i class="fa-solid ${isAlreadyExpanded ? 'fa-angle-up' : 'fa-angle-down'} text-[10px]"></i>
-                        </button>
-                        <div id="${uniqueId}" class="hidden"></div>
+    if (botReply || userInput || (log.details && Object.keys(log.details).length > 0)) {
+        let detailsInnerHtml = '';
+        if (userInput || botReply) {
+            detailsInnerHtml += `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                    <div class="text-zinc-300 font-mono text-[11px] bg-zinc-900/90 p-2.5 rounded border border-zinc-800 flex items-center min-w-0 overflow-hidden">
+                        <span class="text-zinc-400 font-bold shrink-0 mr-1.5">使用者：</span>
+                        <span class="text-zinc-300 truncate whitespace-nowrap">${escapeHtml(String(userInput || '無'))}</span> 
                     </div>
-                `;
-            }
-
-            // 顯示備註預覽
-            let notesHtml = '';
-            const isEthan = currentUser && currentUser.userKey === 'ethan';
-            const ballyNote = (!isEthan && log.bally_note && log.bally_note.trim()) ? log.bally_note : '';
-            const ethanNote = (log.ethan_note && log.ethan_note.trim()) ? log.ethan_note : '';
-
-            if (ballyNote || ethanNote) {
-                notesHtml = `
-                    <div class="mt-2 flex flex-wrap gap-1.5">
-                        ${ballyNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/30 text-emerald-300 border border-emerald-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-shield"></i> ${escapeHtml(ballyNote)}</span>` : ''}
-                        ${ethanNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/30 text-amber-300 border border-amber-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-gear"></i> ${escapeHtml(ethanNote)}</span>` : ''}
+                    <div class="text-indigo-200/90 font-mono text-[11px] bg-indigo-950/20 p-2.5 rounded border border-indigo-900/30 flex items-center min-w-0 overflow-hidden">
+                        <span class="text-indigo-400 font-bold shrink-0 mr-1.5">回覆：</span> 
+                        <span class="text-indigo-200 truncate whitespace-nowrap">${escapeHtml(String(botReply || '無'))}</span>
                     </div>
-                `;
-            }
-
-            // 當展開時：改為上下垂直堆疊呈現
-            if (isAlreadyExpanded && (botReply || userInput)) {
-                const displayReplyText = escapeHtml(String(botReply || '無'));
-                const displayUserText = escapeHtml(String(userInput || '無'));
-                
-                let expandedStackedHtml = `
-                    <div class="mt-2 space-y-2">
-                        <div class="text-zinc-300 font-mono text-[11px] bg-zinc-900/90 p-3 rounded border border-zinc-800 w-full flex flex-col">
-                            <div class="text-zinc-400 font-bold shrink-0 mb-1"><i class="fa-regular fa-comment text-[10px] mr-1"></i>使用者輸入：</div>
-                            <div class="font-normal text-zinc-300 whitespace-pre-wrap break-all">${displayUserText}</div>
-                        </div>
-                        <div class="text-indigo-200/90 font-mono text-[11px] bg-indigo-950/20 p-3 rounded border border-indigo-900/30 w-full flex flex-col">
-                            <div class="text-indigo-400 font-bold shrink-0 mb-1">回覆：</div>
-                            <div class="font-normal text-indigo-200 whitespace-pre-wrap break-all">${displayReplyText}</div>
-                        </div>
-                    </div>
-                `;
-
-                return `
-                    <div class="font-sans text-xs text-zinc-100 break-words leading-relaxed">
-                        <div class="font-medium text-zinc-200">${mainMsg}</div>
-                        ${expandedStackedHtml}
-                        <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
-                            <span>收起內容</span>
-                            <i class="fa-solid fa-angle-up text-[10px]"></i>
-                        </button>
-                        ${notesHtml}
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="font-sans text-xs text-zinc-100 break-words leading-relaxed">
-                    <div class="font-medium text-zinc-200">${mainMsg}</div>
-                    ${extraHtml}
-                    ${notesHtml}
                 </div>
             `;
         }
 
-        // 展開與收起功能
+        extraHtml = `
+            <div class="mt-2 space-y-1.5">
+                ${detailsInnerHtml}
+                <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-1 text-[11px] text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
+                    <span>${isAlreadyExpanded ? '收起內容' : '展開查看全部'}</span>
+                    <i class="fa-solid ${isAlreadyExpanded ? 'fa-angle-up' : 'fa-angle-down'} text-[10px]"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    let notesHtml = '';
+    const isEthan = currentUser && currentUser.userKey === 'ethan';
+    const ballyNote = (!isEthan && log.bally_note && log.bally_note.trim()) ? log.bally_note : '';
+    const ethanNote = (log.ethan_note && log.ethan_note.trim()) ? log.ethan_note : '';
+
+    if (ballyNote || ethanNote) {
+        notesHtml = `
+            <div class="mt-2 flex flex-wrap gap-1.5">
+                ${ballyNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/30 text-emerald-300 border border-emerald-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-shield"></i> ${escapeHtml(ballyNote)}</span>` : ''}
+                ${ethanNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/30 text-amber-300 border border-amber-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-gear"></i> ${escapeHtml(ethanNote)}</span>` : ''}
+            </div>
+        `;
+    }
+
+    if (isAlreadyExpanded && (botReply || userInput)) {
+        return `
+            <div class="font-sans text-xs text-zinc-100 break-words leading-relaxed">
+                <div class="font-medium text-zinc-200">${mainMsg}</div>
+                <div class="mt-2 space-y-2">
+                    <div class="text-zinc-300 font-mono text-[11px] bg-zinc-900/90 p-3 rounded border border-zinc-800 w-full flex flex-col">
+                        <div class="text-zinc-400 font-bold shrink-0 mb-1">使用者輸入：</div>
+                        <div class="font-normal text-zinc-300 whitespace-pre-wrap break-all">${escapeHtml(String(userInput || '無'))}</div>
+                    </div>
+                    <div class="text-indigo-200/90 font-mono text-[11px] bg-indigo-950/20 p-3 rounded border border-indigo-900/30 w-full flex flex-col">
+                        <div class="text-indigo-400 font-bold shrink-0 mb-1">回覆：</div>
+                        <div class="font-normal text-indigo-200 whitespace-pre-wrap break-all">${escapeHtml(String(botReply || '無'))}</div>
+                    </div>
+                </div>
+                <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
+                    <span>收起內容</span>
+                    <i class="fa-solid fa-angle-up text-[10px]"></i>
+                </button>
+                ${notesHtml}
+            </div>
+        `;
+    }
+
+    return `
+        <div class="font-sans text-xs text-zinc-100 break-words leading-relaxed">
+            <div class="font-medium text-zinc-200">${mainMsg}</div>
+            ${extraHtml}
+            ${notesHtml}
+        </div>
+    `;
+}
+
         window.toggleExpandText = function(targetId, btnElement) {
-            const isAlreadyExpanded = expandedState.has(targetId);
-            if (isAlreadyExpanded) {
+            if (expandedState.has(targetId)) {
                 expandedState.delete(targetId);
             } else {
                 expandedState.add(targetId);
@@ -1302,83 +1520,42 @@
             
             const isBally = currentUser && currentUser.userKey === 'bally';
             const isEthan = currentUser && currentUser.userKey === 'ethan';
-
             const filtered = getFilteredLogs();
 
-            filtered.sort((a, b) => {
-                const aPinned = a.pinned ? 1 : 0;
-                const bPinned = b.pinned ? 1 : 0;
-                return bPinned - aPinned;
-            });
+            filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
 
             const countElem = document.getElementById('filtered-count');
             if (countElem) countElem.innerText = `${filtered.length} / ${allLogs.length} 筆紀錄`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="py-12 text-center text-zinc-600 font-mono">
-                            沒有符合當前條件的日誌。
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-zinc-600 font-mono">沒有符合當前條件的日誌。</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(log => {
-                const config = eventConfigs[log.type] || {
-                    icon: 'fa-solid fa-circle-info',
-                    badgeStyle: 'border border-zinc-800 text-zinc-400 bg-zinc-900/30',
-                    label: log.type || 'INFO'
-                };
-
+                const config = eventConfigs[log.type] || { icon: 'fa-solid fa-circle-info', badgeStyle: 'border border-zinc-800 text-zinc-400 bg-zinc-900/30', label: log.type || 'INFO' };
                 const isPinned = Boolean(log.pinned);
-                const hasBallyNote = Boolean(log.bally_note && log.bally_note.trim());
-                const hasEthanNote = Boolean(log.ethan_note && log.ethan_note.trim());
-                const hasAnyNote = (!isEthan && hasBallyNote) || hasEthanNote;
+                const hasAnyNote = (!isEthan && log.bally_note && log.bally_note.trim()) || (log.ethan_note && log.ethan_note.trim());
 
-                let actionButtons = [];
-
-                // 1. 釘選按鈕 (左上)
-                actionButtons.push(`
-                    <button onclick="togglePinLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center ${isPinned ? 'bg-amber-500/25 text-amber-300 border-amber-500/60' : 'bg-amber-950/30 hover:bg-amber-900/50 text-amber-400 border-amber-800/50'} border rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer" title="${isPinned ? '取消釘選' : '釘選此筆 Log'}">
+                let actionButtons = [
+                    `<button onclick="togglePinLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center ${isPinned ? 'bg-amber-500/25 text-amber-300 border-amber-500/60' : 'bg-amber-950/30 hover:bg-amber-900/50 text-amber-400 border-amber-800/50'} border rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
                         <i class="fa-solid fa-thumbtack text-[10px] ${isPinned ? 'text-amber-400 -rotate-45' : 'text-amber-400/80'}"></i>
                         <span>${isPinned ? '已釘選' : '釘選'}</span>
-                    </button>
-                `);
-
-                // 2. 備註按鈕 (右上)
-                if (isBally || isEthan) {
-                    actionButtons.push(`
-                        <button onclick="openNoteModal('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-violet-950/40 hover:bg-violet-900/60 text-violet-300 border border-violet-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer" title="查看/編輯備註與詳細紀錄">
-                            <i class="fa-regular fa-comment-dots text-[10px]"></i>
-                            <span>備註</span>
-                            ${hasAnyNote ? `<span class="w-1.5 h-1.5 rounded-full bg-violet-400 ml-0.5"></span>` : ''}
-                        </button>
-                    `);
-                } else {
-                    actionButtons.push(`<div></div>`);
-                }
-
-                // 3. 複製按鈕 (左下)
-                actionButtons.push(`
-                    <button onclick="copyLogEntry('${escapeHtml(log.id)}', this)" class="px-2 py-1 w-full justify-center bg-teal-950/40 hover:bg-teal-900/60 text-teal-300 border border-teal-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer" title="複製此筆 Log">
+                    </button>`,
+                    (isBally || isEthan) ? `<button onclick="openNoteModal('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-violet-950/40 hover:bg-violet-900/60 text-violet-300 border border-violet-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
+                        <i class="fa-regular fa-comment-dots text-[10px]"></i>
+                        <span>備註</span>
+                        ${hasAnyNote ? `<span class="w-1.5 h-1.5 rounded-full bg-violet-400 ml-0.5"></span>` : ''}
+                    </button>` : `<div></div>`,
+                    `<button onclick="copyLogEntry('${escapeHtml(log.id)}', this)" class="px-2 py-1 w-full justify-center bg-teal-950/40 hover:bg-teal-900/60 text-teal-300 border border-teal-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
                         <i class="fa-regular fa-copy text-[10px]"></i>
                         <span>複製</span>
-                    </button>
-                `);
-
-                // 4. 刪除按鈕 (右下)
-                if (isBally) {
-                    actionButtons.push(`
-                        <button onclick="askDeleteSingleLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-900/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer" title="刪除此筆 Log">
-                            <i class="fa-solid fa-trash-can text-[10px]"></i>
-                            <span>刪除</span>
-                        </button>
-                    `);
-                } else {
-                    actionButtons.push(`<div></div>`);
-                }
+                    </button>`,
+                    isBally ? `<button onclick="askDeleteSingleLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-900/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
+                        <i class="fa-solid fa-trash-can text-[10px]"></i>
+                        <span>刪除</span>
+                    </button>` : `<div></div>`
+                ];
 
                 return `
                     <tr class="${isPinned ? 'bg-amber-500/10' : ''} hover:bg-zinc-800/20 transition border-b border-zinc-800/40">
@@ -1397,9 +1574,7 @@
                             ${formatLogMessage(log)}
                         </td>
                         <td class="py-4 px-4 text-right align-top w-48">
-                            <div class="grid grid-cols-2 gap-1.5 w-full">
-                                ${actionButtons.join('')}
-                            </div>
+                            <div class="grid grid-cols-2 gap-1.5 w-full">${actionButtons.join('')}</div>
                         </td>
                     </tr>
                 `;
@@ -1407,13 +1582,10 @@
         }
 
         window.togglePinLog = async function(logId) {
-            if (!currentUser) return;
             const log = allLogs.find(l => l.id === logId);
             if (!log) return;
-
             try {
-                const logRef = ref(database, `logs/${logId}`);
-                await update(logRef, { pinned: !log.pinned });
+                await update(ref(database, `logs/${logId}`), { pinned: !log.pinned });
             } catch (err) {
                 console.error("Firebase Pin Update Error:", err);
             }
@@ -1422,7 +1594,6 @@
         window.openNoteModal = function(logId) {
             const log = allLogs.find(l => l.id === logId);
             if (!log || !currentUser) return;
-
             activeNoteContext = { logId };
 
             const isBally = currentUser.userKey === 'bally';
@@ -1430,11 +1601,9 @@
 
             const ballySec = document.getElementById('bally-note-section');
             const ballyTextarea = document.getElementById('bally-note-textarea');
-            
             const ethanSec = document.getElementById('ethan-note-section');
             const ethanTextarea = document.getElementById('ethan-note-textarea');
             const ethanNotice = document.getElementById('ethan-read-only-notice');
-
             const jsonSec = document.getElementById('json-section');
             const jsonContent = document.getElementById('modal-json-content');
 
@@ -1460,10 +1629,9 @@
                 ethanSec.classList.add('hidden');
             }
 
-            const hasJsonDetails = log.details && typeof log.details === 'object' && Object.keys(log.details).length > 0;
-            if (isBally && currentUser.canViewJson && hasJsonDetails) {
+            if (currentUser.canViewJson) {
                 jsonSec.classList.remove('hidden');
-                jsonContent.innerText = JSON.stringify(log.details, null, 2);
+                jsonContent.innerText = JSON.stringify(log, null, 2);
             } else {
                 jsonSec.classList.add('hidden');
             }
@@ -1471,144 +1639,29 @@
             document.getElementById('note-modal').classList.remove('hidden');
         };
 
-        function closeNoteModal() {
-            document.getElementById('note-modal').classList.add('hidden');
-            activeNoteContext = { logId: null };
-        }
-
-        document.getElementById('close-note-modal-btn').addEventListener('click', closeNoteModal);
-        document.getElementById('cancel-note-btn').addEventListener('click', closeNoteModal);
-
-        document.getElementById('save-note-btn').addEventListener('click', async () => {
-            const { logId } = activeNoteContext;
-            if (!logId || !currentUser) return;
-
-            const updates = {};
-            if (currentUser.userKey === 'bally') {
-                const ballyVal = (document.getElementById('bally-note-textarea').value || '').trim();
-                updates['bally_note'] = ballyVal;
-            } else if (currentUser.userKey === 'ethan') {
-                const ethanVal = (document.getElementById('ethan-note-textarea').value || '').trim();
-                updates['ethan_note'] = ethanVal;
+        window.copyLogEntry = function(logId, btnElem) {
+            const log = allLogs.find(l => l.id === logId);
+            if (!log) return;
+            const textToCopy = JSON.stringify(log, null, 2);
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('已複製該筆日誌詳細資料！');
+            } catch (err) {
+                showToast('複製失敗', true);
             }
-
-            if (Object.keys(updates).length > 0) {
-                try {
-                    const logRef = ref(database, `logs/${logId}`);
-                    await update(logRef, updates);
-                    closeNoteModal();
-                } catch (err) {
-                    console.error("Firebase Note Update Error:", err);
-                }
-            } else {
-                closeNoteModal();
-            }
-        });
+            textArea.remove();
+        };
 
         window.askDeleteSingleLog = function(logId) {
             if (!currentUser || !currentUser.canDelete) return;
-
             activeDeleteContext = { type: 'single', logId };
-            document.getElementById('delete-modal-title').innerText = "刪除單一 Log 紀錄";
-            document.getElementById('delete-modal-desc').innerText = `確定要刪除此筆日誌資料嗎？此動作無法復原。`;
+            document.getElementById('delete-modal-title').innerText = "確認刪除紀錄";
+            document.getElementById('delete-modal-desc').innerText = "確定要永久刪除這筆 Log 紀錄嗎？此動作無法復原。";
             document.getElementById('delete-modal').classList.remove('hidden');
-        };
-
-        const clearAllBtn = document.getElementById('clear-all-btn');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', () => {
-                if (!currentUser || !currentUser.canDelete) return;
-
-                activeDeleteContext = { type: 'all', logId: null };
-                document.getElementById('delete-modal-title').innerText = "清空未釘選 Log 紀錄";
-                document.getElementById('delete-modal-desc').innerText = `確定要清空未釘選的 Log 紀錄嗎？（已釘選的 Log 將會完整保留）`;
-                document.getElementById('delete-modal').classList.remove('hidden');
-            });
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('delete-modal').classList.add('hidden');
-            activeDeleteContext = { type: null, logId: null };
-        }
-
-        function getFormattedTimestamp() {
-            const now = new Date();
-            const pad = (n) => String(n).padStart(2, '0');
-            return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        }
-
-        document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
-
-        document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-            if (!currentUser || !currentUser.canDelete) return;
-
-            const { type, logId } = activeDeleteContext;
-
-            try {
-                if (type === 'single' && logId) {
-                    await remove(ref(database, `logs/${logId}`));
-                } else if (type === 'all') {
-                    const unpinnedLogs = allLogs.filter(l => !l.pinned);
-                    const updates = {};
-                    unpinnedLogs.forEach(l => {
-                        updates[l.id] = null;
-                    });
-
-                    const newLogRef = push(ref(database, 'logs'));
-                    const currentTimestamp = getFormattedTimestamp();
-                    updates[newLogRef.key] = {
-                        type: 'SYSTEM',
-                        message: 'Log 已被管理員手動清空',
-                        timestamp: currentTimestamp,
-                        bally_note: `${currentUser ? currentUser.name : '管理員'} 於 ${currentTimestamp} 執行清空作業`
-                    };
-
-                    if (Object.keys(updates).length > 0) {
-                        await update(ref(database, 'logs'), updates);
-                    }
-                }
-                closeDeleteModal();
-            } catch (err) {
-                console.error("Firebase Delete Error:", err);
-            }
-        });
-
-        document.getElementById('copy-json-btn').addEventListener('click', () => {
-            const jsonText = document.getElementById('modal-json-content').innerText;
-            const tempInput = document.createElement('textarea');
-            tempInput.value = jsonText;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            const copyBtn = document.getElementById('copy-json-btn');
-            copyBtn.innerHTML = `<i class="fa-solid fa-check"></i><span>已複製！</span>`;
-            setTimeout(() => {
-                copyBtn.innerHTML = `<i class="fa-regular fa-copy"></i><span>複製 JSON</span>`;
-            }, 2000);
-        });
-
-        window.copyLogEntry = function(id, btnElement) {
-            const targetLog = allLogs.find(l => l.id === id);
-            if (!targetLog) return;
-
-            const botReply = targetLog.bot_reply || targetLog.reply || targetLog.response || targetLog.bot_response || (targetLog.details && (targetLog.details.reply || targetLog.details.response || targetLog.details.bot_reply || targetLog.details.bot_response)) || '';
-            const userInput = targetLog.user_input || targetLog.input || targetLog.prompt || targetLog.query || targetLog.content || targetLog.text || (targetLog.details && (targetLog.details.user_input || targetLog.details.input || targetLog.details.prompt || targetLog.details.query || targetLog.details.content || targetLog.details.text || targetLog.details.message)) || '';
-            const copyContent = `[${targetLog.timestamp || '-'}] [${targetLog.type || 'INFO'}] ${targetLog.message || ''}${botReply ? '\nB-Bot回覆: ' + botReply : ''}${userInput ? '\n使用者輸入: ' + userInput : ''}`;
-
-            const tempInput = document.createElement('textarea');
-            tempInput.value = copyContent;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            const originalHtml = btnElement.innerHTML;
-            btnElement.innerHTML = `<i class="fa-solid fa-check text-teal-500 text-[10px]"></i><span class="text-teal-500 font-medium">已複製</span>`;
-            setTimeout(() => {
-                btnElement.innerHTML = originalHtml;
-            }, 1500);
         };
     </script>
 </body>
