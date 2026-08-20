@@ -36,16 +36,27 @@
             width: 6px;
             height: 6px;
         }
-        ::-webkit-scrollbar-track {
+        html.dark ::-webkit-scrollbar-track {
             background: #09090b;
         }
-        ::-webkit-scrollbar-thumb {
+        html.dark ::-webkit-scrollbar-thumb {
             background: #27272a;
             border-radius: 3px;
         }
-        ::-webkit-scrollbar-thumb:hover {
+        html.dark ::-webkit-scrollbar-thumb:hover {
             background: #3f3f46;
         }
+        html:not(.dark) ::-webkit-scrollbar-track {
+            background: #f4f4f5;
+        }
+        html:not(.dark) ::-webkit-scrollbar-thumb {
+            background: #d4d4d8;
+            border-radius: 3px;
+        }
+        html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1aa;
+        }
+
         .dot-online {
             background-color: #10b981;
             box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
@@ -424,7 +435,7 @@
         </div>
     </div>
 
-    <!-- 修改密碼 Modal (同步儲存至 Firebase Realtime Database /passcodes) -->
+    <!-- 修改密碼 Modal -->
     <div id="change-password-modal" class="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-cardBg border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-sm flex flex-col shadow-2xl overflow-hidden p-5 space-y-4">
             <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
@@ -498,7 +509,6 @@
             }
         };
 
-        // Firebase Realtime Database 雲端密碼資料庫快取
         let cloudPasscodes = {
             bally: "0515",
             ethan: "0216"
@@ -541,7 +551,6 @@
         let currentTypeFilter = 'ALL';
         let currentSearchQuery = '';
 
-        // 監聽雲端密碼同步 (路徑: /passcodes)
         const passcodesRef = ref(database, 'passcodes');
         onValue(passcodesRef, (snapshot) => {
             const data = snapshot.val();
@@ -551,7 +560,6 @@
                     ethan: data.ethan || "0216"
                 };
             } else {
-                // 如果遠端尚無紀錄，初始化寫入預設密碼
                 set(passcodesRef, {
                     bally: "0515",
                     ethan: "0216"
@@ -559,7 +567,6 @@
             }
         });
 
-        // 頁面切換主邏輯函數
         window.switchMainTab = function(tabName) {
             const dashView = document.getElementById('view-dashboard');
             const chatView = document.getElementById('view-chat');
@@ -961,7 +968,6 @@
                     }
 
                     try {
-                        // 更新 Firebase 雲端密碼資料庫
                         cloudPasscodes[currentUser.userKey] = newInput;
                         await update(ref(database, 'passcodes'), {
                             [currentUser.userKey]: newInput
@@ -1037,7 +1043,6 @@
             }
         });
 
-        // 監聽聊天室資料 (路徑: mini_chat)
         const chatRef = ref(database, 'mini_chat');
         onValue(chatRef, (snapshot) => {
             const data = snapshot.val();
@@ -1062,7 +1067,7 @@
                         <div class="flex flex-col items-end space-y-0.5">
                             <div class="flex items-center space-x-1.5 text-[10px] font-mono text-zinc-400">
                                 <span>${timeStr}</span>
-                                <span class="text-emerald-500 font-semibold">${senderName}</span>
+                                <span class="text-emerald-600 dark:text-emerald-500 font-semibold">${senderName}</span>
                             </div>
                             <div class="bg-emerald-600 text-white px-3.5 py-2 rounded-l-lg rounded-br-lg max-w-[80%] break-words text-xs shadow-xs">
                                 ${escapeHtml(msg.text)}
@@ -1073,10 +1078,10 @@
                     return `
                         <div class="flex flex-col items-start space-y-0.5">
                             <div class="flex items-center space-x-1.5 text-[10px] font-mono text-zinc-400">
-                                <span class="text-amber-500 font-semibold">${senderName}</span>
+                                <span class="text-amber-600 dark:text-amber-500 font-semibold">${senderName}</span>
                                 <span>${timeStr}</span>
                             </div>
-                            <div class="bg-zinc-800 text-zinc-100 border border-zinc-700/60 px-3.5 py-2 rounded-r-lg rounded-bl-lg max-w-[80%] break-words text-xs shadow-xs">
+                            <div class="bg-zinc-200 text-zinc-900 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700/60 px-3.5 py-2 rounded-r-lg rounded-bl-lg max-w-[80%] break-words text-xs shadow-xs">
                                 ${escapeHtml(msg.text)}
                             </div>
                         </div>
@@ -1087,7 +1092,6 @@
             container.scrollTop = container.scrollHeight;
         });
 
-        // 處理聊天發送訊息 (限制最多 20 條)
         const chatForm = document.getElementById('mini-chat-form');
         if (chatForm) {
             chatForm.addEventListener('submit', async (e) => {
@@ -1188,7 +1192,6 @@
                 });
             }
 
-            // 備註 Modal 事件
             const closeNoteBtn = document.getElementById('close-note-modal-btn');
             const cancelNoteBtn = document.getElementById('cancel-note-btn');
             const saveNoteBtn = document.getElementById('save-note-btn');
@@ -1226,7 +1229,6 @@
                 });
             }
 
-            // 複製 JSON 按鈕
             const copyJsonBtn = document.getElementById('copy-json-btn');
             if (copyJsonBtn) {
                 copyJsonBtn.addEventListener('click', () => {
@@ -1245,7 +1247,6 @@
                 });
             }
 
-            // 刪除 Modal 事件
             const deleteModal = document.getElementById('delete-modal');
             const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
             const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
@@ -1416,94 +1417,109 @@
                 .replace(/'/g, '&#039;');
         }
 
-function formatLogMessage(log) {
-    const mainMsg = escapeHtml(log.message || '');
-    
-    // 提取機器人回覆 (支援外層與 details 內層)
-    const botReply = log.bot_reply || log.reply || log.response || log.bot_response || 
-                     (log.details && (log.details.reply || log.details.response || log.details.bot_reply || log.details.bot_response)) || '';
-                     
-    // 補強：提取使用者輸入 (新增 details 內層支援)
-    const userInput = log.user_input || log.input || log.prompt || log.query || log.content || log.text || 
-                      (log.details && (log.details.user_input || log.details.input || log.details.prompt || log.details.query || log.details.content || log.details.text)) || '';
-    
-    let extraHtml = '';
-    const uniqueId = `expand-content-${log.id}`;
-    const isAlreadyExpanded = expandedState.has(uniqueId);
+        function formatLogMessage(log) {
+            const mainMsg = escapeHtml(log.message || '');
+            const typeUpper = (log.type || '').toUpperCase();
+            const isChatCategory = typeUpper === 'CHAT';
+            
+            // 檢查是否為 dm (DM_REJECTED)、SECURITY 或 BROADCAST 類別
+            const isTargetClass = typeUpper === 'DM_REJECTED' || typeUpper === 'SECURITY' || typeUpper === 'BROADCAST';
+            
+            const botReply = log.bot_reply || log.reply || log.response || log.bot_response || 
+                             (log.details && (log.details.reply || log.details.response || log.details.bot_reply || log.details.bot_response)) || '';
+                             
+            const userInput = log.user_input || log.input || log.prompt || log.query || log.content || log.text || 
+                              (log.details && (log.details.user_input || log.details.input || log.details.prompt || log.details.query || log.details.content || log.details.text)) || '';
+            
+            let extraHtml = '';
+            const uniqueId = `expand-content-${log.id}`;
+            const isAlreadyExpanded = expandedState.has(uniqueId);
 
-    if (botReply || userInput || (log.details && Object.keys(log.details).length > 0)) {
-        let detailsInnerHtml = '';
-        if (userInput || botReply) {
-            detailsInnerHtml += `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                    <div class="text-zinc-300 font-mono text-[11px] bg-zinc-900/90 p-2.5 rounded border border-zinc-800 flex items-center min-w-0 overflow-hidden">
-                        <span class="text-zinc-400 font-bold shrink-0 mr-1.5">使用者：</span>
-                        <span class="text-zinc-300 truncate whitespace-nowrap">${escapeHtml(String(userInput || '無'))}</span> 
+            if (isTargetClass) {
+                // dm、SECURITY、broadcast 類別：必須要有使用者輸入，但不要機器人回復，也不要有顯示更多內容
+                if (userInput) {
+                    extraHtml = `
+                        <div class="mt-2">
+                            <div class="text-zinc-700 dark:text-zinc-300 font-mono text-[11px] bg-zinc-100 dark:bg-zinc-900/90 p-2.5 rounded border border-zinc-200 dark:border-zinc-800 flex items-center min-w-0 overflow-hidden">
+                                <span class="text-zinc-500 dark:text-zinc-400 font-bold shrink-0 mr-1.5">使用者輸入：</span>
+                                <span class="text-zinc-800 dark:text-zinc-300 truncate whitespace-nowrap">${escapeHtml(String(userInput))}</span> 
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (isChatCategory) {
+                let detailsInnerHtml = '';
+                if (userInput || botReply) {
+                    detailsInnerHtml += `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                            <div class="text-zinc-700 dark:text-zinc-300 font-mono text-[11px] bg-zinc-100 dark:bg-zinc-900/90 p-2.5 rounded border border-zinc-200 dark:border-zinc-800 flex items-center min-w-0 overflow-hidden">
+                                <span class="text-zinc-500 dark:text-zinc-400 font-bold shrink-0 mr-1.5">使用者：</span>
+                                <span class="text-zinc-800 dark:text-zinc-300 truncate whitespace-nowrap">${escapeHtml(String(userInput || '無'))}</span> 
+                            </div>
+                            <div class="text-indigo-900 dark:text-indigo-200/90 font-mono text-[11px] bg-indigo-50 dark:bg-indigo-950/20 p-2.5 rounded border border-indigo-200 dark:border-indigo-900/30 flex items-center min-w-0 overflow-hidden">
+                                <span class="text-indigo-600 dark:text-indigo-400 font-bold shrink-0 mr-1.5">回覆：</span> 
+                                <span class="text-indigo-900 dark:text-indigo-200 truncate whitespace-nowrap">${escapeHtml(String(botReply || '無'))}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                extraHtml = `
+                    <div class="mt-2 space-y-1.5">
+                        ${detailsInnerHtml}
+                        <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
+                            <span>${isAlreadyExpanded ? '收起內容' : '顯示完整內容'}</span>
+                            <i class="fa-solid ${isAlreadyExpanded ? 'fa-angle-up' : 'fa-angle-down'} text-[10px]"></i>
+                        </button>
                     </div>
-                    <div class="text-indigo-200/90 font-mono text-[11px] bg-indigo-950/20 p-2.5 rounded border border-indigo-900/30 flex items-center min-w-0 overflow-hidden">
-                        <span class="text-indigo-400 font-bold shrink-0 mr-1.5">回覆：</span> 
-                        <span class="text-indigo-200 truncate whitespace-nowrap">${escapeHtml(String(botReply || '無'))}</span>
+                `;
+            }
+
+            let notesHtml = '';
+            const isEthan = currentUser && currentUser.userKey === 'ethan';
+            const ballyNote = (!isEthan && log.bally_note && log.bally_note.trim()) ? log.bally_note : '';
+            const ethanNote = (log.ethan_note && log.ethan_note.trim()) ? log.ethan_note : '';
+
+            if (ballyNote || ethanNote) {
+                notesHtml = `
+                    <div class="mt-2 flex flex-wrap gap-1.5">
+                        ${ballyNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-shield"></i> ${escapeHtml(ballyNote)}</span>` : ''}
+                        ${ethanNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-gear"></i> ${escapeHtml(ethanNote)}</span>` : ''}
                     </div>
+                `;
+            }
+
+            if (isChatCategory && isAlreadyExpanded) {
+                return `
+                    <div class="font-sans text-xs text-zinc-800 dark:text-zinc-100 break-words leading-relaxed">
+                        <div class="font-medium text-zinc-900 dark:text-zinc-200">${mainMsg}</div>
+                        <div class="mt-2 space-y-2">
+                            <div class="text-zinc-700 dark:text-zinc-300 font-mono text-[11px] bg-zinc-100 dark:bg-zinc-900/90 p-3 rounded border border-zinc-200 dark:border-zinc-800 w-full flex flex-col">
+                                <div class="text-zinc-500 dark:text-zinc-400 font-bold shrink-0 mb-1">使用者輸入：</div>
+                                <div class="font-normal text-zinc-800 dark:text-zinc-300 whitespace-pre-wrap break-all">${escapeHtml(String(userInput || '無'))}</div>
+                            </div>
+                            <div class="text-indigo-900 dark:text-indigo-200/90 font-mono text-[11px] bg-indigo-50 dark:bg-indigo-950/20 p-3 rounded border border-indigo-200 dark:border-indigo-900/30 w-full flex flex-col">
+                                <div class="text-indigo-600 dark:text-indigo-400 font-bold shrink-0 mb-1">回覆：</div>
+                                <div class="font-normal text-indigo-900 dark:text-indigo-200 whitespace-pre-wrap break-all">${escapeHtml(String(botReply || '無'))}</div>
+                            </div>
+                        </div>
+                        <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-2 text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
+                            <span>收起內容</span>
+                            <i class="fa-solid fa-angle-up text-[10px]"></i>
+                        </button>
+                        ${notesHtml}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="font-sans text-xs text-zinc-800 dark:text-zinc-100 break-words leading-relaxed">
+                    <div class="font-medium text-zinc-900 dark:text-zinc-200">${mainMsg}</div>
+                    ${extraHtml}
+                    ${notesHtml}
                 </div>
             `;
         }
-
-        extraHtml = `
-            <div class="mt-2 space-y-1.5">
-                ${detailsInnerHtml}
-                <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-1 text-[11px] text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
-                    <span>${isAlreadyExpanded ? '收起內容' : '展開查看全部'}</span>
-                    <i class="fa-solid ${isAlreadyExpanded ? 'fa-angle-up' : 'fa-angle-down'} text-[10px]"></i>
-                </button>
-            </div>
-        `;
-    }
-
-    let notesHtml = '';
-    const isEthan = currentUser && currentUser.userKey === 'ethan';
-    const ballyNote = (!isEthan && log.bally_note && log.bally_note.trim()) ? log.bally_note : '';
-    const ethanNote = (log.ethan_note && log.ethan_note.trim()) ? log.ethan_note : '';
-
-    if (ballyNote || ethanNote) {
-        notesHtml = `
-            <div class="mt-2 flex flex-wrap gap-1.5">
-                ${ballyNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/30 text-emerald-300 border border-emerald-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-shield"></i> ${escapeHtml(ballyNote)}</span>` : ''}
-                ${ethanNote ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/30 text-amber-300 border border-amber-900/50 text-[10px] font-mono"><i class="fa-solid fa-user-gear"></i> ${escapeHtml(ethanNote)}</span>` : ''}
-            </div>
-        `;
-    }
-
-    if (isAlreadyExpanded && (botReply || userInput)) {
-        return `
-            <div class="font-sans text-xs text-zinc-100 break-words leading-relaxed">
-                <div class="font-medium text-zinc-200">${mainMsg}</div>
-                <div class="mt-2 space-y-2">
-                    <div class="text-zinc-300 font-mono text-[11px] bg-zinc-900/90 p-3 rounded border border-zinc-800 w-full flex flex-col">
-                        <div class="text-zinc-400 font-bold shrink-0 mb-1">使用者輸入：</div>
-                        <div class="font-normal text-zinc-300 whitespace-pre-wrap break-all">${escapeHtml(String(userInput || '無'))}</div>
-                    </div>
-                    <div class="text-indigo-200/90 font-mono text-[11px] bg-indigo-950/20 p-3 rounded border border-indigo-900/30 w-full flex flex-col">
-                        <div class="text-indigo-400 font-bold shrink-0 mb-1">回覆：</div>
-                        <div class="font-normal text-indigo-200 whitespace-pre-wrap break-all">${escapeHtml(String(botReply || '無'))}</div>
-                    </div>
-                </div>
-                <button onclick="toggleExpandText('${uniqueId}', this)" class="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 cursor-pointer pt-0.5">
-                    <span>收起內容</span>
-                    <i class="fa-solid fa-angle-up text-[10px]"></i>
-                </button>
-                ${notesHtml}
-            </div>
-        `;
-    }
-
-    return `
-        <div class="font-sans text-xs text-zinc-100 break-words leading-relaxed">
-            <div class="font-medium text-zinc-200">${mainMsg}</div>
-            ${extraHtml}
-            ${notesHtml}
-        </div>
-    `;
-}
 
         window.toggleExpandText = function(targetId, btnElement) {
             if (expandedState.has(targetId)) {
@@ -1528,40 +1544,40 @@ function formatLogMessage(log) {
             if (countElem) countElem.innerText = `${filtered.length} / ${allLogs.length} 筆紀錄`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-zinc-600 font-mono">沒有符合當前條件的日誌。</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-zinc-400 dark:text-zinc-600 font-mono">沒有符合當前條件的日誌。</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(log => {
-                const config = eventConfigs[log.type] || { icon: 'fa-solid fa-circle-info', badgeStyle: 'border border-zinc-800 text-zinc-400 bg-zinc-900/30', label: log.type || 'INFO' };
+                const config = eventConfigs[log.type] || { icon: 'fa-solid fa-circle-info', badgeStyle: 'border border-zinc-300 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900/30', label: log.type || 'INFO' };
                 const isPinned = Boolean(log.pinned);
                 const hasAnyNote = (!isEthan && log.bally_note && log.bally_note.trim()) || (log.ethan_note && log.ethan_note.trim());
 
                 let actionButtons = [
-                    `<button onclick="togglePinLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center ${isPinned ? 'bg-amber-500/25 text-amber-300 border-amber-500/60' : 'bg-amber-950/30 hover:bg-amber-900/50 text-amber-400 border-amber-800/50'} border rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
-                        <i class="fa-solid fa-thumbtack text-[10px] ${isPinned ? 'text-amber-400 -rotate-45' : 'text-amber-400/80'}"></i>
+                    `<button onclick="togglePinLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center ${isPinned ? 'bg-amber-100 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-500/60' : 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50'} border rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
+                        <i class="fa-solid fa-thumbtack text-[10px] ${isPinned ? 'text-amber-600 dark:text-amber-400 -rotate-45' : 'text-amber-500 dark:text-amber-400/80'}"></i>
                         <span>${isPinned ? '已釘選' : '釘選'}</span>
                     </button>`,
-                    (isBally || isEthan) ? `<button onclick="openNoteModal('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-violet-950/40 hover:bg-violet-900/60 text-violet-300 border border-violet-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
+                    (isBally || isEthan) ? `<button onclick="openNoteModal('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/40 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
                         <i class="fa-regular fa-comment-dots text-[10px]"></i>
                         <span>備註</span>
-                        ${hasAnyNote ? `<span class="w-1.5 h-1.5 rounded-full bg-violet-400 ml-0.5"></span>` : ''}
+                        ${hasAnyNote ? `<span class="w-1.5 h-1.5 rounded-full bg-violet-500 dark:bg-violet-400 ml-0.5"></span>` : ''}
                     </button>` : `<div></div>`,
-                    `<button onclick="copyLogEntry('${escapeHtml(log.id)}', this)" class="px-2 py-1 w-full justify-center bg-teal-950/40 hover:bg-teal-900/60 text-teal-300 border border-teal-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
+                    `<button onclick="copyLogEntry('${escapeHtml(log.id)}', this)" class="px-2 py-1 w-full justify-center bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
                         <i class="fa-regular fa-copy text-[10px]"></i>
                         <span>複製</span>
                     </button>`,
-                    isBally ? `<button onclick="askDeleteSingleLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-900/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
+                    isBally ? `<button onclick="askDeleteSingleLog('${escapeHtml(log.id)}')" class="px-2 py-1 w-full justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded text-[11px] font-mono transition inline-flex items-center space-x-1 cursor-pointer">
                         <i class="fa-solid fa-trash-can text-[10px]"></i>
                         <span>刪除</span>
                     </button>` : `<div></div>`
                 ];
 
                 return `
-                    <tr class="${isPinned ? 'bg-amber-500/10' : ''} hover:bg-zinc-800/20 transition border-b border-zinc-800/40">
-                        <td class="py-4 px-4 font-mono text-[11px] text-zinc-400 whitespace-nowrap align-top">
+                    <tr class="${isPinned ? 'bg-amber-50/60 dark:bg-amber-500/10' : ''} hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition border-b border-zinc-100 dark:border-zinc-800/40">
+                        <td class="py-4 px-4 font-mono text-[11px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap align-top">
                             <div class="flex items-center space-x-1.5">
-                                ${isPinned ? `<i class="fa-solid fa-thumbtack text-amber-400 text-[10px] -rotate-45" title="已釘選"></i>` : ''}
+                                ${isPinned ? `<i class="fa-solid fa-thumbtack text-amber-500 dark:text-amber-400 text-[10px] -rotate-45" title="已釘選"></i>` : ''}
                                 <span>${escapeHtml(log.timestamp || '-')}</span>
                             </div>
                         </td>
@@ -1570,7 +1586,7 @@ function formatLogMessage(log) {
                                 <span>${escapeHtml(config.label)}</span>
                             </span>
                         </td>
-                        <td class="py-4 px-4 text-zinc-100 align-top break-words">
+                        <td class="py-4 px-4 text-zinc-800 dark:text-zinc-100 align-top break-words">
                             ${formatLogMessage(log)}
                         </td>
                         <td class="py-4 px-4 text-right align-top w-48">
