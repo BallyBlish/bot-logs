@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B-Bot 系統監控與 Log 控制台</title>
+    <title>B-Bot 系統監控</title>
+    <link rel="icon" type="image/png" href="logo.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -329,7 +330,7 @@
                             <p class="text-xs text-zinc-500">提供系統管理員與測試員進行即時交辦事項溝通與對話紀錄</p>
                         </div>
                     </div>
-                    <span class="text-[11px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-800">訊息上限 20 條</span>
+                    
                 </div>
 
                 <!-- 聊天訊息歷史顯示區塊 -->
@@ -1106,18 +1107,6 @@
                 if (!text) return;
 
                 try {
-                    const snap = await new Promise((resolve) => {
-                        onValue(chatRef, (s) => resolve(s), { onlyOnce: true });
-                    });
-
-                    const chatData = snap.val() || {};
-                    let keys = Object.keys(chatData);
-
-                    if (keys.length >= 20) {
-                        let sortedKeys = keys.sort((a, b) => new Date(chatData[a].timestamp) - new Date(chatData[b].timestamp));
-                        await remove(ref(database, `mini_chat/${sortedKeys[0]}`));
-                    }
-
                     const newMsgRef = push(chatRef);
                     await set(newMsgRef, {
                         sender: currentUser.userKey,
